@@ -985,7 +985,14 @@ function formToObj() {
   FIELDS.forEach(f => {
     const el = form.elements[f];
     if (!el) return;
-    obj[f] = el.type === 'checkbox' ? el.checked : el.value.trim();
+    if (el.type === 'checkbox') {
+      obj[f] = el.checked;
+    } else if (el.type === 'number') {
+      const v = el.value.trim();
+      obj[f] = v === '' ? 0 : v;   // blank number field → 0
+    } else {
+      obj[f] = el.value.trim();
+    }
   });
   return obj;
 }
