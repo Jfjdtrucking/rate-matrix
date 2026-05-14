@@ -630,11 +630,19 @@
     <input type="hidden" id="editTripCode" />
 
     <div class="btn-row" style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-      <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;margin-right:auto" onclick="deleteCurrentRecord()">🗑 Delete Record</button>
       <button type="button" class="btn btn-secondary" onclick="resetForm()">Clear</button>
       <button type="submit" class="btn btn-primary" id="submitBtn">Save to Google Sheet</button>
     </div>
   </form>
+
+  <!-- Danger zone — only visible when editing an existing record -->
+  <div id="dangerZone" style="display:none;margin-top:10px;border:1.5px solid #fca5a5;border-radius:12px;background:#fff5f5;padding:14px 20px;display:none;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:.78rem;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">⚠ Danger Zone</div>
+      <div style="font-size:.82rem;color:#7f1d1d" id="dangerZoneLabel">Permanently delete this record from Google Sheet.</div>
+    </div>
+    <button type="button" class="btn btn-danger" id="deleteBtn" tabindex="-1" onclick="deleteCurrentRecord()">🗑 Delete this Record</button>
+  </div>
 </div>
 </div>
 
@@ -1016,6 +1024,11 @@ function objToForm(obj) {
   banner.className = 'mode-banner mode-edit';
   document.getElementById('modeBannerText').textContent =
     `✏ Editing: ${obj.TripCode || ''}` + (obj.Client ? `  —  ${obj.Client}` : '');
+  // Show danger zone
+  const dz = document.getElementById('dangerZone');
+  dz.style.display = 'flex';
+  document.getElementById('dangerZoneLabel').textContent =
+    `Permanently delete "${obj.TripCode || ''}" from Google Sheet.`;
 }
 
 function resetForm() {
@@ -1024,7 +1037,7 @@ function resetForm() {
   document.getElementById('tollLabel').textContent = 'No';
   document.getElementById('tripCodeHint').style.display = 'none';
   document.getElementById('submitBtn').textContent = 'Save to Google Sheet';
-  document.getElementById('deleteBtn').style.display = 'none';
+  document.getElementById('dangerZone').style.display = 'none';
   document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
   // Reset mode banner
   const banner = document.getElementById('modeBanner');
