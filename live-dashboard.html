@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoice Dashboard — Live</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css">
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f7f8fa;color:#1d2433;font-size:14px;line-height:1.45}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 18px 48px}
+header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+h1{font-size:20px;margin:0 0 2px}.sub{color:#6b7480;font-size:12.5px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid #d8dce2;background:#fff;color:#475}
+.badge .dot{width:7px;height:7px;border-radius:50%;background:#9aa3ad}
+.badge.live{border-color:#b8e0c4;background:#f1faf4;color:#1f7a43}.badge.live .dot{background:#16a34a}
+.badge.err{border-color:#e2b8b8;background:#fdf2f2;color:#b42318}.badge.err .dot{background:#dc2626}
+button.rf{font-size:12px;font-weight:600;padding:5px 12px;border:1px solid #d4d8df;border-radius:8px;background:#fff;color:#1d2433;cursor:pointer}
+button.rf:hover{background:#f3f5f8}
+.tabs{display:flex;gap:4px;border-bottom:1px solid #e7e9ee;margin:14px 0 18px}
+.tab{padding:9px 16px;font-size:13.5px;font-weight:600;color:#6b7480;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:#1f6feb;border-bottom-color:#1f6feb}
+.view{display:none}.view.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:0 0 18px}
+.card{background:#fff;border:1px solid #e7e9ee;border-radius:12px;padding:14px 16px}
+.card .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#7a828d;font-weight:600;display:flex;align-items:center;gap:6px}
+.card .val{font-size:22px;font-weight:700;margin-top:6px;letter-spacing:-.02em}.card .meta{font-size:11.5px;color:#8a929c;margin-top:3px}
+.card.alert .val{color:#dc2626}.card.accent .val{color:#1f6feb}.card.good .val{color:#15803d}.card.cur .val{color:#d97706}.card.fut .val{color:#15803d}.card.tot .val{color:#1f6feb}
+.swatch{width:9px;height:9px;border-radius:2px;display:inline-block}
+.panel{background:#fff;border:1px solid #e7e9ee;border-radius:12px;padding:16px 18px;margin-bottom:18px}
+.panel h2{font-size:14px;margin:0 0 14px;font-weight:700}.panel h2 .hint{font-weight:400;color:#9aa3ad;font-size:11.5px;margin-left:8px}
+.chartbox{position:relative;height:340px}.chartbox.sm{height:300px}
+.gridjs-wrapper{box-shadow:none!important;border-radius:8px}table.gridjs-table{font-size:13px}.gridjs-th{background:#f3f5f8!important;font-weight:600!important}
+.posneg{font-variant-numeric:tabular-nums}.tag-od{color:#dc2626;font-weight:600}.tag-pd{color:#1f6feb;font-weight:600}
+.controls{display:flex;align-items:center;gap:10px;margin:0 0 14px;flex-wrap:wrap}.controls label{font-size:12px;color:#6b7480;font-weight:600}
+select{font-size:13px;padding:7px 10px;border:1px solid #d4d8df;border-radius:8px;background:#fff;color:#1d2433;min-width:200px}
+.wk{border:1px solid #e7e9ee;border-radius:10px;margin-bottom:9px;overflow:hidden;background:#fff}
+.wk>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;user-select:none}
+.wk>summary::-webkit-details-marker{display:none}.wk>summary:hover{background:#fafbfc}
+.caret{transition:transform .15s;color:#aab0b9;font-size:12px}.wk[open] .caret{transform:rotate(90deg)}
+.wk .wname{font-weight:700;min-width:120px}
+.wk .pill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em}
+.pill.overdue{background:#fdeaea;color:#c0322b}.pill.current{background:#fef3e2;color:#b06a12}.pill.future{background:#e9f6ee;color:#1f7a43}
+.wk .wcnt{color:#8a929c;font-size:12px}.wk .wamt{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.wbar{height:5px;background:#eef0f3}.wbar>i{display:block;height:100%}
+.detail{padding:4px 14px 12px 38px}
+.crow{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed #eef0f3;font-size:13px}.crow:first-child{border-top:none}
+.crow .cn{font-weight:600;min-width:150px}.crow .cc{color:#9aa3ad;font-size:12px;min-width:60px}
+.crow .ca{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600}
+.crow .cbarwrap{flex:1;height:7px;background:#f0f2f5;border-radius:4px;overflow:hidden;max-width:280px}.crow .cbar{height:100%;border-radius:4px}
+.note{font-size:12px;color:#6b7480;background:#fbfbfc;border:1px solid #eceef2;border-left:3px solid #c8ccd4;border-radius:6px;padding:10px 13px}.note b{color:#3a424d}
+.msg{background:#fff;border:1px solid #e7e9ee;border-radius:12px;padding:28px;text-align:center;color:#6b7480}
+.msg h3{margin:0 0 8px;color:#b42318;font-size:15px}.msg code{background:#f3f5f8;padding:1px 5px;border-radius:4px;font-size:12px}
+.foot{font-size:11.5px;color:#9aa3ad;text-align:center;margin-top:10px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #d4d8df;border-top-color:#1f6feb;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px}@keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Accounts Receivable &amp; Payment Forecast</h1>
+      <div class="sub">Live from INVOICE SUBMISSION TRACKER 2026 &middot; figures in &#8369;</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="rf" id="refreshBtn" onclick="load()">&#8635; Refresh</button>
+      <div id="badge" class="badge"><span class="dot"></span><span id="badgeText">loading…</span></div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-v="recv">Receivables</div>
+    <div class="tab" data-v="weekly">Weekly forecast</div>
+  </div>
+
+  <div id="msg"></div>
+
+  <section class="view active" id="view-recv">
+    <div class="cards" id="r-cards"></div>
+    <div class="panel"><h2>Outstanding by client <span class="hint">overdue + not-yet-due, top exposures</span></h2><div class="chartbox"><canvas id="r-bar"></canvas></div></div>
+    <div class="panel"><h2>Per-client breakdown <span class="hint">click a column header to sort</span></h2><div id="r-grid"></div></div>
+  </section>
+
+  <section class="view" id="view-weekly">
+    <div class="controls"><label for="clientSel">Filter by client:</label><select id="clientSel"></select></div>
+    <div class="cards" id="w-cards"></div>
+    <div class="panel"><h2>Expected collections per week <span class="hint">red = overdue &middot; amber = this week &middot; green = upcoming</span></h2><div class="chartbox sm"><canvas id="w-bar"></canvas></div></div>
+    <div class="panel"><h2>Who pays, and how much, each week <span class="hint">click a week to expand</span></h2><div id="weeks"></div></div>
+  </section>
+
+  <div class="panel"><h2>Notes</h2><div class="note"><b>Overdue</b> = unpaid invoices due before this week. <b>Not yet due</b> = unpaid invoices due this week or later. <b>Paid</b> = collected in 2026. This page reads the Google Sheet live each time it loads, so it reflects the latest saved data. Dates use Manila time.</div></div>
+  <div class="foot">Reads the published Google Sheet directly &middot; refresh anytime with the button above.</div>
+</div>
+
+<script>
+const SHEET_ID = "1Nr5op9IruB36NJp2OZ-hZS9Ne7Yjl3_96cr_4-AkALk";
+const TAB = "INVOICE SUBMISSION TRACKER";
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB)}`;
+
+const peso=n=>"₱"+Number(n||0).toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pesoK=n=>{n=Number(n||0);if(Math.abs(n)>=1e6)return "₱"+(n/1e6).toFixed(2)+"M";if(Math.abs(n)>=1e3)return "₱"+(n/1e3).toFixed(0)+"K";return "₱"+n.toFixed(0);};
+const STC={overdue:"#dc2626",current:"#d97706",future:"#22a155"};
+
+// ---- tab switching ----
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');document.getElementById('view-'+t.dataset.v).classList.add('active');
+}));
+
+function setBadge(kind,text){const b=document.getElementById('badge');b.className="badge "+(kind||"");document.getElementById('badgeText').innerHTML=text;}
+
+// ---- CSV parser (handles quoted fields, commas, newlines) ----
+function parseCSV(text){
+  const rows=[];let row=[],cur="",q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}
+    else{if(c==='"')q=true;else if(c===','){row.push(cur);cur="";}
+      else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur="";}
+      else if(c==='\r'){}else cur+=c;}}
+  if(cur.length||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+function num(s){const v=parseFloat(String(s).replace(/[^0-9.\-]/g,""));return isNaN(v)?0:v;}
+function parseDate(s){if(!s)return null;s=String(s).trim();
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return new Date(+m[3],+m[1]-1,+m[2]);
+  m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  const d=new Date(s);return isNaN(d)?null:d;}
+
+function manilaToday(){
+  const s=new Date().toLocaleString("en-US",{timeZone:"Asia/Manila"});
+  const d=new Date(s);d.setHours(0,0,0,0);return d;
+}
+function mondayOf(d){const x=new Date(d);const wd=(x.getDay()+6)%7;x.setDate(x.getDate()-wd);x.setHours(0,0,0,0);return x;}
+function fmtRange(mon){const e=new Date(mon);e.setDate(e.getDate()+6);
+  const o={month:"short",day:"numeric"};return mon.toLocaleDateString("en-US",o)+" – "+e.toLocaleDateString("en-US",o);}
+
+function compute(rows){
+  // map headers
+  const hdr=rows[0].map(h=>h.trim());
+  const find=(pred)=>hdr.findIndex(pred);
+  const ci={
+    client: find(h=>h.replace(/[_\s]/g,"").toLowerCase()==="clientname"),
+    net:    find(h=>h.toUpperCase().includes("TOTAL NET")),
+    due:    find(h=>h.toLowerCase()==="due date"),
+    status: find(h=>h.toUpperCase().replace(/\s/g,"").includes("PAYMENTSTATUS")),
+  };
+  if(ci.client<0||ci.net<0||ci.due<0||ci.status<0) throw new Error("columns");
+  const today=manilaToday(), curMon=mondayOf(today);
+  const paid={},over={},pend={},weeks={};
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];if(!r||r.length<=ci.client)continue;
+    const cl=(r[ci.client]||"").trim();if(!cl)continue;
+    const a=num(r[ci.net]);const st=(r[ci.status]||"").trim();
+    if(/^paid$/i.test(st)){paid[cl]=(paid[cl]||0)+a;continue;}
+    const d=parseDate(r[ci.due]);
+    if(d&&d<curMon)over[cl]=(over[cl]||0)+a; else pend[cl]=(pend[cl]||0)+a;
+    if(d){const mk=mondayOf(d).getTime();weeks[mk]=weeks[mk]||{};weeks[mk][cl]=weeks[mk][cl]||[0,0];weeks[mk][cl][0]++;weeks[mk][cl][1]+=a;}
+  }
+  const names=new Set([...Object.keys(paid),...Object.keys(over),...Object.keys(pend)]);
+  const summary=[];
+  names.forEach(cl=>{const o=over[cl]||0,p=pend[cl]||0,pd=paid[cl]||0;
+    if(o||p||pd)summary.push({client:cl,overdue:+o.toFixed(2),pending:+p.toFixed(2),outstanding:+(o+p).toFixed(2),paid:+pd.toFixed(2)});});
+  summary.sort((a,b)=>b.outstanding-a.outstanding);
+  const wkeys=Object.keys(weeks).map(Number).sort((a,b)=>a-b);
+  const wout=wkeys.map(mk=>{const mon=new Date(mk);
+    const cls=Object.entries(weeks[mk]).map(([c,v])=>({client:c,count:v[0],amount:+v[1].toFixed(2)})).sort((a,b)=>b.amount-a.amount);
+    const st=mk<curMon.getTime()?"overdue":(mk===curMon.getTime()?"current":"future");
+    return {week_start:mk,label:fmtRange(mon),count:cls.reduce((s,c)=>s+c.count,0),amount:+cls.reduce((s,c)=>s+c.amount,0).toFixed(2),status:st,clients:cls};});
+  return {summary,weekly:{weeks:wout}};
+}
+
+// ---- receivables render ----
+let rBar=null,rGrid=null;
+function renderRecv(rows){
+  const t=rows.reduce((a,r)=>{a.overdue+=r.overdue;a.pending+=r.pending;a.outstanding+=r.outstanding;a.paid+=r.paid;return a;},{overdue:0,pending:0,outstanding:0,paid:0});
+  const col=t.paid+t.outstanding>0?(t.paid/(t.paid+t.outstanding)*100):0;
+  const cards=[{lbl:"Total outstanding",val:peso(t.outstanding),meta:rows.filter(r=>r.outstanding>0).length+" clients with a balance",cls:"accent",sw:"#1f6feb"},
+    {lbl:"Overdue",val:peso(t.overdue),meta:rows.filter(r=>r.overdue>0).length+" clients past due",cls:"alert",sw:"#dc2626"},
+    {lbl:"Not yet due",val:peso(t.pending),meta:"submitted, awaiting payment",cls:"",sw:"#f59e0b"},
+    {lbl:"Paid YTD 2026",val:peso(t.paid),meta:col.toFixed(1)+"% of billed collected",cls:"good",sw:"#15803d"}];
+  document.getElementById('r-cards').innerHTML=cards.map(c=>`<div class="card ${c.cls}"><div class="lbl"><span class="swatch" style="background:${c.sw}"></span>${c.lbl}</div><div class="val">${c.val}</div><div class="meta">${c.meta}</div></div>`).join('');
+  const top=rows.filter(r=>r.outstanding>0).slice(0,10);
+  if(rBar)rBar.destroy();
+  rBar=new Chart(document.getElementById('r-bar'),{type:'bar',data:{labels:top.map(r=>r.client.replace(/_/g," ")),datasets:[{label:'Overdue',data:top.map(r=>r.overdue),backgroundColor:'#dc2626',borderRadius:3},{label:'Not yet due',data:top.map(r=>r.pending),backgroundColor:'#f59e0b',borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,ticks:{callback:v=>pesoK(v),font:{size:11}},grid:{color:'#eef0f3'}},y:{stacked:true,ticks:{font:{size:11.5}},grid:{display:false}}},plugins:{legend:{position:'top',align:'end',labels:{boxWidth:11,font:{size:11.5}}},tooltip:{callbacks:{label:c=>c.dataset.label+": "+peso(c.raw)}}}}});
+  const data=rows.map(r=>[r.client.replace(/_/g," "),r.overdue,r.pending,r.outstanding,r.paid]);
+  const cfg={columns:[{name:"Client"},{name:"Overdue",formatter:c=>gridjs.html(`<span class="posneg tag-od">${c>0?peso(c):"—"}</span>`)},{name:"Not yet due",formatter:c=>gridjs.html(`<span class="posneg">${c>0?peso(c):"—"}</span>`)},{name:"Outstanding",formatter:c=>gridjs.html(`<span class="posneg"><b>${c>0?peso(c):"—"}</b></span>`)},{name:"Paid YTD",formatter:c=>gridjs.html(`<span class="posneg tag-pd">${c>0?peso(c):"—"}</span>`)}],data,sort:true,search:true,style:{td:{padding:"8px 12px"},th:{padding:"9px 12px"}}};
+  const el=document.getElementById('r-grid');
+  if(rGrid){rGrid.updateConfig(cfg).forceRender();}else{rGrid=new gridjs.Grid(cfg);rGrid.render(el);}
+}
+
+// ---- weekly render ----
+let wBar=null,WEEKLY=null;
+function viewFor(client){return WEEKLY.weeks.map(w=>{let cl=w.clients;if(client!=="__all")cl=cl.filter(c=>c.client===client);return {...w,clients:[...cl].sort((a,b)=>b.amount-a.amount),amount:+cl.reduce((s,c)=>s+c.amount,0).toFixed(2),count:cl.reduce((s,c)=>s+c.count,0)};}).filter(w=>w.count>0);}
+function renderWeekly(client){
+  const weeks=viewFor(client);
+  const overdue=weeks.filter(w=>w.status==='overdue').reduce((s,w)=>s+w.amount,0);
+  const odc=weeks.filter(w=>w.status==='overdue').reduce((s,w)=>s+w.count,0);
+  const cur=weeks.filter(w=>w.status==='current').reduce((s,w)=>s+w.amount,0);
+  const order=weeks.filter(w=>w.status!=='overdue');const n4=order.slice(0,4).reduce((s,w)=>s+w.amount,0);
+  const total=weeks.reduce((s,w)=>s+w.amount,0);const tc=weeks.reduce((s,w)=>s+w.count,0);
+  const cards=[{lbl:"Overdue — collect now",val:peso(overdue),meta:odc+" invoices past due",cls:"alert",sw:STC.overdue},
+    {lbl:"Due this week",val:peso(cur),meta:(weeks.find(w=>w.status==='current')||{}).label||"—",cls:"cur",sw:STC.current},
+    {lbl:"Next 4 weeks expected",val:peso(n4),meta:"current + 3 upcoming weeks",cls:"fut",sw:STC.future},
+    {lbl:"Total pipeline",val:peso(total),meta:tc+" unpaid invoices",cls:"tot",sw:"#1f6feb"}];
+  document.getElementById('w-cards').innerHTML=cards.map(c=>`<div class="card ${c.cls}"><div class="lbl"><span class="swatch" style="background:${c.sw}"></span>${c.lbl}</div><div class="val">${c.val}</div><div class="meta">${c.meta}</div></div>`).join('');
+  if(wBar)wBar.destroy();
+  wBar=new Chart(document.getElementById('w-bar'),{type:'bar',data:{labels:weeks.map(w=>w.label),datasets:[{data:weeks.map(w=>w.amount),backgroundColor:weeks.map(w=>STC[w.status]),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{font:{size:10},maxRotation:60,minRotation:60},grid:{display:false}},y:{ticks:{callback:v=>pesoK(v),font:{size:11}},grid:{color:'#eef0f3'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>peso(c.raw)+" · "+weeks[c.dataIndex].count+" inv"}}}}});
+  const el=document.getElementById('weeks');
+  if(!weeks.length){el.innerHTML='<div class="note">No unpaid invoices for this client.</div>';return;}
+  const maxAmt=Math.max(...weeks.map(w=>w.amount),1);
+  el.innerHTML=weeks.map(w=>{const cmax=Math.max(...w.clients.map(c=>c.amount),1);
+    const rws=w.clients.map(c=>`<div class="crow"><span class="cn">${c.client.replace(/_/g,' ')}</span><span class="cc">${c.count} inv</span><span class="cbarwrap"><span class="cbar" style="width:${Math.max(2,c.amount/cmax*100)}%;background:${STC[w.status]}"></span></span><span class="ca">${peso(c.amount)}</span></div>`).join('');
+    const op=(w.status==='overdue'||w.status==='current')?' open':'';
+    return `<details class="wk"${op}><summary><span class="caret">▶</span><span class="wname">${w.label}</span><span class="pill ${w.status}">${w.status==='current'?'this week':w.status}</span><span class="wcnt">${w.count} inv</span><span class="wamt">${peso(w.amount)}</span></summary><div class="wbar"><i style="width:${w.amount/maxAmt*100}%;background:${STC[w.status]}"></i></div><div class="detail">${rws}</div></details>`;}).join('');
+}
+
+// ---- loader ----
+async function load(){
+  document.getElementById('msg').innerHTML="";
+  setBadge("", '<span class="spin"></span> loading…');
+  try{
+    const res=await fetch(CSV_URL+"&_="+Date.now(),{redirect:"follow"});
+    if(!res.ok) throw new Error("http "+res.status);
+    const text=await res.text();
+    if(/<html|Sign in|accounts\.google/i.test(text.slice(0,400))) throw new Error("notpublic");
+    const rows=parseCSV(text);
+    if(rows.length<2) throw new Error("empty");
+    const {summary,weekly}=compute(rows);
+    WEEKLY=weekly;
+    renderRecv(summary);
+    const sel=document.getElementById('clientSel');
+    const allC=[...new Set(weekly.weeks.flatMap(w=>w.clients.map(c=>c.client)))].sort();
+    sel.innerHTML=`<option value="__all">All clients (${allC.length})</option>`+allC.map(c=>`<option value="${c}">${c.replace(/_/g,' ')}</option>`).join('');
+    sel.onchange=()=>renderWeekly(sel.value);
+    renderWeekly("__all");
+    const now=new Date().toLocaleString("en-PH",{timeZone:"Asia/Manila",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+    setBadge("live",'live · '+now);
+  }catch(e){
+    if(e.message==="notpublic"){
+      setBadge("err","sheet not shared");
+      document.getElementById('msg').innerHTML=`<div class="msg"><h3>The sheet isn't public yet</h3><div>Open the Google Sheet → <b>Share</b> → General access → <b>Anyone with the link = Viewer</b>. Then click <b>Refresh</b>.<br><br>This page reads <code>${TAB}</code> via the sheet's CSV endpoint, which only works when link-viewing is on.</div></div>`;
+    }else if(e.message==="columns"){
+      setBadge("err","column mismatch");
+      document.getElementById('msg').innerHTML=`<div class="msg"><h3>Couldn't find the expected columns</h3><div>The page looks for <code>Client_Name</code>, <code>TOTAL NET</code>, <code>Due Date</code>, and <code>PAYMENT STATUS</code> on the <code>${TAB}</code> tab.</div></div>`;
+    }else{
+      setBadge("err","load failed");
+      document.getElementById('msg').innerHTML=`<div class="msg"><h3>Couldn't load the data</h3><div>${e.message}. Click <b>Refresh</b> to retry.</div></div>`;
+    }
+  }
+}
+load();
+</script>
+</body>
+</html>
